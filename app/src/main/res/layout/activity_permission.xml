@@ -48,11 +48,5 @@
         android:layout_height="wrap_content"
         android:id="@+id/btn_location"/>
 
-    <Button
-        android:text="SEND SMS"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/btn_sms"/>
-
 
 </LinearLayout>

@@ -1,8 +1,12 @@
 package id.sjarifhd.androidlearn;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -28,7 +32,6 @@ public class PermissionActivity extends AppCompatActivity {
     private static final int REQUEST_LOCATION = 3;
     private static String[] PERMISSIONS_LOCATION = {Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION};
-    private static final int REQUEST_SMS = 4;
 
     private View mLayout;
 
@@ -36,7 +39,6 @@ public class PermissionActivity extends AppCompatActivity {
     private Button btnContact;
     private Button btnStorage;
     private Button btnLocation;
-    private Button btnSms;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +50,12 @@ public class PermissionActivity extends AppCompatActivity {
         btnContact = (Button) findViewById(R.id.btn_contact);
         btnStorage = (Button) findViewById(R.id.btn_storage);
         btnLocation = (Button) findViewById(R.id.btn_location);
-        btnSms = (Button) findViewById(R.id.btn_sms);
 
         onClickedButton();
 
     }
+
+
 
     private void onClickedButton() {
         btnCamera.setOnClickListener(new View.OnClickListener() {
@@ -79,14 +82,7 @@ public class PermissionActivity extends AppCompatActivity {
         btnLocation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-            }
-        });
-
-        btnSms.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
+                getLocation();
             }
         });
     }
@@ -130,13 +126,27 @@ public class PermissionActivity extends AppCompatActivity {
                             .show();
                 }
                 break;
+            case REQUEST_LOCATION:
+                Log.i(TAG, "Received response for access location permissions request.");
+
+                if (PermissionUtil.verifyPermissions(grantResults)) {
+                    Snackbar.make(mLayout, R.string.permision_available_location,
+                            Snackbar.LENGTH_SHORT)
+                            .show();
+                } else {
+                    Log.i(TAG, "Access location permissions were NOT granted.");
+                    Snackbar.make(mLayout, R.string.permissions_not_granted,
+                            Snackbar.LENGTH_SHORT)
+                            .show();
+                }
+                break;
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
                 break;
         }
     }
 
-    public void showCamera() {
+    private void showCamera() {
         Log.i(TAG, "Show camera button pressed. Checking permission.");
         // BEGIN_INCLUDE(camera_permission)
         // Check if the Camera permission is already available.
@@ -207,13 +217,8 @@ public class PermissionActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Requests the Contacts permissions.
-     * If the permission has been denied previously, a SnackBar will prompt the user to grant the
-     * permission, otherwise it is requested directly.
-     */
     private void requestContactsPermissions() {
-        // BEGIN_INCLUDE(contacts_permission_request)
+
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.READ_CONTACTS)
                 || ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -246,4 +251,105 @@ public class PermissionActivity extends AppCompatActivity {
 
     private void showContactDetails() {
     }
+
+    private void getLocation() {
+//        double longitude = 0.0;
+//        double latitude = 0.0;
+        boolean isGPSEnabled;
+        boolean isNetworkEnabled;
+
+        /**
+         * Location Manager
+         * Location Listener
+         */
+        String locationNetworkProvider = LocationManager.NETWORK_PROVIDER;
+        // Or, use GPS location data:
+        String locationGPSProvider = LocationManager.GPS_PROVIDER;
+
+        // Acquire a reference to the system Location Manager
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        // Define a listener that responds to location updates
+        LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                // Called when a new location is found by the network location provider.
+                makeUseOfNewLocation(location);
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            public void onProviderEnabled(String provider) {
+            }
+
+            public void onProviderDisabled(String provider) {
+                Log.v(TAG, "Your "+ provider + " is not enabled");
+            }
+        };
+
+
+        Log.i(TAG, "Access location button pressed. Checking permissions.");
+
+        // Verify that all required access location permissions have been granted.
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.i(TAG, "Access location permissions has NOT been granted. Requesting permissions.");
+            requestLocationPermission();
+        } else {
+            Log.i(TAG,
+                    "Access location permissions have already been granted. Getting location");
+
+            locationManager.requestLocationUpdates(locationGPSProvider, 0, 0, locationListener);
+            locationManager.removeUpdates(locationListener);
+            //            Location location = locationManager.getLastKnownLocation(locationGPSProvider);
+//            if (location != null) {
+//                latitude = location.getLatitude();
+//                longitude = location.getLongitude();
+//                Log.v(TAG, "Latitude: " + latitude + " --- Longitude: " + longitude);
+//            }
+        }
+    }
+
+    private void makeUseOfNewLocation(Location location) {
+        double longitude;
+        double latitude;
+
+        latitude = location.getLatitude();
+        longitude = location.getLongitude();
+
+        Log.v(TAG, "Latitude: " + latitude + " --- Longitude: " + longitude);
+    }
+
+    private void requestLocationPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                || ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)) {
+
+            // Provide an additional rationale to the user if the permission was not granted
+            // and the user would benefit from additional context for the use of the permission.
+            // For example, if the request has been denied previously.
+            Log.i(TAG,
+                    "Displaying access location permission rationale to provide additional context.");
+
+            // Display a SnackBar with an explanation and a button to trigger the request.
+            Snackbar.make(mLayout, R.string.permission_location_rationale,
+                    Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            ActivityCompat
+                                    .requestPermissions(PermissionActivity.this, PERMISSIONS_LOCATION,
+                                            REQUEST_LOCATION);
+                        }
+                    })
+                    .show();
+        } else {
+            // Access location permissions have not been granted yet. Request them directly.
+            ActivityCompat.requestPermissions(this, PERMISSIONS_LOCATION, REQUEST_LOCATION);
+        }
+    }
+
 }

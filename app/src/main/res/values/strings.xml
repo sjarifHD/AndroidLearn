@@ -6,4 +6,6 @@
     <string name="permision_available_contacts">Contacts Permissions have been granted. Contacts screen can now be opened.</string>
     <string name="ok">OK</string>
     <string name="permission_contacts_rationale">Contacts permissions are needed to demonstrate access.</string>
+    <string name="permission_location_rationale">Access location is needed for getting your current location</string>
+    <string name="permision_available_location">Access your cureent location on this device is permitted.</string>
 </resources>
